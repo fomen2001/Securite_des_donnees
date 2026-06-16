@@ -50,8 +50,8 @@
                     <i class="bi bi-eye me-1"></i>Aperçu
                 </div>
                 <div class="card-body text-center py-3">
-                    @if($params['entreprise_logo'])
-                        <img src="{{ Storage::url($params['entreprise_logo']) }}"
+                    @if($params['entreprise_logo'] && file_exists(public_path('images/' . $params['entreprise_logo'])))
+                        <img src="{{ asset('images/' . $params['entreprise_logo']) }}"
                              id="logoApercu" class="logo-preview mb-2 d-block mx-auto">
                     @else
                         <div id="logoApercu" class="text-muted mb-2">
@@ -173,8 +173,8 @@
                     <div class="row g-4 align-items-center">
                         {{-- Logo actuel --}}
                         <div class="col-md-4 text-center">
-                            @if($params['entreprise_logo'])
-                                <img src="{{ Storage::url($params['entreprise_logo']) }}"
+                            @if($params['entreprise_logo'] && file_exists(public_path('images/' . $params['entreprise_logo'])))
+                                <img src="{{ asset('images/' . $params['entreprise_logo']) }}"
                                      id="currentLogo" class="logo-preview mb-3 d-block mx-auto shadow-sm">
                                 <div class="form-check d-inline-flex align-items-center gap-2">
                                     <input type="checkbox" name="supprimer_logo" value="1"

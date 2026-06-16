@@ -41,23 +41,23 @@ class ParametreController extends Controller
             'monnaie_symbole'      => 'required|string|max:10',
         ]);
 
-        // Upload du logo
+        // Upload du logo — stocké directement dans public/images/logo.{ext}
         if ($request->hasFile('logo')) {
-            // Supprimer l'ancien logo s'il existe
-            $ancienLogo = Parametre::get('entreprise_logo');
-            if ($ancienLogo && Storage::disk('public')->exists($ancienLogo)) {
-                Storage::disk('public')->delete($ancienLogo);
+            // Supprimer tout fichier logo.* existant
+            foreach (glob(public_path('images/logo.*')) ?: [] as $ancien) {
+                @unlink($ancien);
             }
-
-            $chemin = $request->file('logo')->store('entreprise', 'public');
-            Parametre::set('entreprise_logo', $chemin);
+            $ext      = strtolower($request->file('logo')->getClientOriginalExtension());
+            $filename = 'logo.' . $ext;
+            $request->file('logo')->move(public_path('images'), $filename);
+            Parametre::set('entreprise_logo', $filename);
         }
 
         // Supprimer le logo si la case est cochée
         if ($request->boolean('supprimer_logo')) {
             $ancienLogo = Parametre::get('entreprise_logo');
-            if ($ancienLogo && Storage::disk('public')->exists($ancienLogo)) {
-                Storage::disk('public')->delete($ancienLogo);
+            if ($ancienLogo && file_exists(public_path('images/' . $ancienLogo))) {
+                @unlink(public_path('images/' . $ancienLogo));
             }
             Parametre::set('entreprise_logo', null);
         }

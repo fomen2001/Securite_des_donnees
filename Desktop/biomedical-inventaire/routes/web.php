@@ -22,6 +22,18 @@ use App\Http\Controllers\RH\MasseController;
 use App\Http\Controllers\Finance\FinanceDashboardController;
 use App\Http\Controllers\Finance\DepenseController;
 use App\Http\Controllers\Finance\RapportController;
+use App\Http\Controllers\Impots\ImpotDashboardController;
+use App\Http\Controllers\Impots\DeclarationTVAController;
+use App\Http\Controllers\Impots\DeclarationISController;
+use App\Http\Controllers\Impots\BilanComptableController;
+use App\Http\Controllers\Impots\PatenteController;
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\Achats\BonCommandeController;
+use App\Http\Controllers\Achats\BonReceptionController;
+use App\Http\Controllers\Achats\BonLivraisonController;
+use App\Http\Controllers\Secretariat\VisiteurController;
+use App\Http\Controllers\Secretariat\MessageController;
+use App\Http\Controllers\Secretariat\RapportReunionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
@@ -281,6 +293,171 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/tresorerie', [RapportController::class, 'tresorerie'])
             ->middleware('permission:finance.rapports.voir')
             ->name('tresorerie');
+    });
+
+    // ── Module Impôts ─────────────────────────────────────────────
+    Route::prefix('impots')->name('impots.')->group(function () {
+
+        Route::get('/', [ImpotDashboardController::class, 'index'])
+            ->middleware('permission:impots.voir')
+            ->name('dashboard');
+
+        // TVA
+        Route::get('/tva', [DeclarationTVAController::class, 'index'])
+            ->middleware('permission:impots.tva.voir')->name('tva.index');
+        Route::get('/tva/creer', [DeclarationTVAController::class, 'create'])
+            ->middleware('permission:impots.tva.gerer')->name('tva.create');
+        Route::post('/tva', [DeclarationTVAController::class, 'store'])
+            ->middleware('permission:impots.tva.gerer')->name('tva.store');
+        Route::get('/tva/{tva}', [DeclarationTVAController::class, 'show'])
+            ->middleware('permission:impots.tva.voir')->name('tva.show');
+        Route::post('/tva/{tva}/soumettre', [DeclarationTVAController::class, 'soumettre'])
+            ->middleware('permission:impots.tva.gerer')->name('tva.soumettre');
+        Route::post('/tva/{tva}/payer', [DeclarationTVAController::class, 'payer'])
+            ->middleware('permission:impots.tva.gerer')->name('tva.payer');
+
+        // IS
+        Route::get('/is', [DeclarationISController::class, 'index'])
+            ->middleware('permission:impots.is.voir')->name('is.index');
+        Route::get('/is/creer', [DeclarationISController::class, 'create'])
+            ->middleware('permission:impots.is.gerer')->name('is.create');
+        Route::post('/is', [DeclarationISController::class, 'store'])
+            ->middleware('permission:impots.is.gerer')->name('is.store');
+        Route::get('/is/{is}', [DeclarationISController::class, 'show'])
+            ->middleware('permission:impots.is.voir')->name('is.show');
+        Route::post('/is/{is}/soumettre', [DeclarationISController::class, 'soumettre'])
+            ->middleware('permission:impots.is.gerer')->name('is.soumettre');
+        Route::post('/is/{is}/payer', [DeclarationISController::class, 'payer'])
+            ->middleware('permission:impots.is.gerer')->name('is.payer');
+
+        // Bilan comptable
+        Route::get('/bilan', [BilanComptableController::class, 'index'])
+            ->middleware('permission:impots.bilan.voir')->name('bilan.index');
+        Route::get('/bilan/creer', [BilanComptableController::class, 'create'])
+            ->middleware('permission:impots.bilan.gerer')->name('bilan.create');
+        Route::post('/bilan', [BilanComptableController::class, 'store'])
+            ->middleware('permission:impots.bilan.gerer')->name('bilan.store');
+        Route::get('/bilan/{exercice}', [BilanComptableController::class, 'show'])
+            ->middleware('permission:impots.bilan.voir')->name('bilan.show');
+        Route::post('/bilan/{exercice}/valider', [BilanComptableController::class, 'valider'])
+            ->middleware('permission:impots.bilan.gerer')->name('bilan.valider');
+        Route::post('/bilan/{exercice}/deposer', [BilanComptableController::class, 'deposer'])
+            ->middleware('permission:impots.bilan.gerer')->name('bilan.deposer');
+
+        // Patente
+        Route::get('/patente', [PatenteController::class, 'index'])
+            ->middleware('permission:impots.voir')->name('patente.index');
+        Route::get('/patente/creer', [PatenteController::class, 'create'])
+            ->middleware('permission:impots.tva.gerer')->name('patente.create');
+        Route::post('/patente', [PatenteController::class, 'store'])
+            ->middleware('permission:impots.tva.gerer')->name('patente.store');
+        Route::post('/patente/{patente}/soumettre', [PatenteController::class, 'soumettre'])
+            ->middleware('permission:impots.tva.gerer')->name('patente.soumettre');
+        Route::post('/patente/{patente}/payer', [PatenteController::class, 'payer'])
+            ->middleware('permission:impots.tva.gerer')->name('patente.payer');
+        Route::post('/patente/calculer', [PatenteController::class, 'calculer'])
+            ->middleware('permission:impots.voir')->name('patente.calculer');
+    });
+
+    // ── Module GED (Gestion Électronique de Documents) ────────────
+    Route::prefix('documents')->name('documents.')->middleware('permission:documents.voir')->group(function () {
+
+        Route::get('/',                [DocumentController::class, 'index'])  ->name('index');
+        Route::get('/ajouter',         [DocumentController::class, 'create']) ->middleware('permission:documents.creer')->name('create');
+        Route::post('/',               [DocumentController::class, 'store'])  ->middleware('permission:documents.creer')->name('store');
+        Route::get('/{document}',      [DocumentController::class, 'show'])   ->name('show');
+        Route::get('/{document}/modifier', [DocumentController::class, 'edit'])   ->middleware('permission:documents.modifier')->name('edit');
+        Route::put('/{document}',      [DocumentController::class, 'update']) ->middleware('permission:documents.modifier')->name('update');
+        Route::delete('/{document}',   [DocumentController::class, 'destroy'])->middleware('permission:documents.supprimer')->name('destroy');
+        Route::get('/{document}/telecharger', [DocumentController::class, 'download'])->name('download');
+        Route::patch('/{document}/archiver',  [DocumentController::class, 'archiver']) ->middleware('permission:documents.modifier')->name('archiver');
+        Route::patch('/{document}/restaurer', [DocumentController::class, 'restaurer'])->middleware('permission:documents.modifier')->name('restaurer');
+
+        // Catégories
+        Route::get('/categories/gerer',       [DocumentController::class, 'categories'])    ->middleware('permission:documents.gerer')->name('categories');
+        Route::post('/categories',             [DocumentController::class, 'storeCategorie'])->middleware('permission:documents.gerer')->name('categories.store');
+        Route::put('/categories/{categorie}',  [DocumentController::class, 'updateCategorie'])->middleware('permission:documents.gerer')->name('categories.update');
+        Route::delete('/categories/{categorie}',[DocumentController::class, 'destroyCategorie'])->middleware('permission:documents.gerer')->name('categories.destroy');
+    });
+
+    // ── Module Achats (Bons de commande, réception, livraison) ───
+    Route::prefix('achats')->name('achats.')->group(function () {
+
+        // Bons de commande
+        Route::get('/commandes', [BonCommandeController::class, 'index'])
+            ->middleware('permission:achats.voir')->name('commandes.index');
+        Route::get('/commandes/creer', [BonCommandeController::class, 'create'])
+            ->middleware('permission:achats.commandes.creer')->name('commandes.create');
+        Route::post('/commandes', [BonCommandeController::class, 'store'])
+            ->middleware('permission:achats.commandes.creer')->name('commandes.store');
+        Route::get('/commandes/{bonCommande}', [BonCommandeController::class, 'show'])
+            ->middleware('permission:achats.voir')->name('commandes.show');
+        Route::patch('/commandes/{bonCommande}/confirmer', [BonCommandeController::class, 'confirmer'])
+            ->middleware('permission:achats.commandes.modifier')->name('commandes.confirmer');
+        Route::patch('/commandes/{bonCommande}/annuler', [BonCommandeController::class, 'annuler'])
+            ->middleware('permission:achats.commandes.annuler')->name('commandes.annuler');
+
+        // Bons de réception
+        Route::get('/receptions', [BonReceptionController::class, 'index'])
+            ->middleware('permission:achats.voir')->name('receptions.index');
+        Route::get('/receptions/creer', [BonReceptionController::class, 'create'])
+            ->middleware('permission:achats.receptions.creer')->name('receptions.create');
+        Route::post('/receptions', [BonReceptionController::class, 'store'])
+            ->middleware('permission:achats.receptions.creer')->name('receptions.store');
+        Route::get('/receptions/{bonReception}', [BonReceptionController::class, 'show'])
+            ->middleware('permission:achats.voir')->name('receptions.show');
+        Route::patch('/receptions/{bonReception}/valider', [BonReceptionController::class, 'valider'])
+            ->middleware('permission:achats.receptions.valider')->name('receptions.valider');
+        Route::patch('/receptions/{bonReception}/rejeter', [BonReceptionController::class, 'rejeter'])
+            ->middleware('permission:achats.receptions.valider')->name('receptions.rejeter');
+
+        // Bons de livraison
+        Route::get('/livraisons', [BonLivraisonController::class, 'index'])
+            ->middleware('permission:achats.voir')->name('livraisons.index');
+        Route::get('/livraisons/creer', [BonLivraisonController::class, 'create'])
+            ->middleware('permission:achats.livraisons.creer')->name('livraisons.create');
+        Route::post('/livraisons', [BonLivraisonController::class, 'store'])
+            ->middleware('permission:achats.livraisons.creer')->name('livraisons.store');
+        Route::get('/livraisons/{bonLivraison}', [BonLivraisonController::class, 'show'])
+            ->middleware('permission:achats.voir')->name('livraisons.show');
+        Route::patch('/livraisons/{bonLivraison}/expedier', [BonLivraisonController::class, 'expedier'])
+            ->middleware('permission:achats.livraisons.expedier')->name('livraisons.expedier');
+        Route::patch('/livraisons/{bonLivraison}/livrer', [BonLivraisonController::class, 'livrer'])
+            ->middleware('permission:achats.livraisons.expedier')->name('livraisons.livrer');
+        Route::patch('/livraisons/{bonLivraison}/annuler', [BonLivraisonController::class, 'annuler'])
+            ->middleware('permission:achats.livraisons.creer')->name('livraisons.annuler');
+    });
+
+    // ── Module Secrétariat ───────────────────────────────────────
+    Route::prefix('secretariat')->name('secretariat.')->middleware('permission:secretariat.voir')->group(function () {
+        // Visiteurs
+        Route::get('/visiteurs',                    [VisiteurController::class, 'index'])   ->name('visiteurs.index');
+        Route::get('/visiteurs/nouveau',            [VisiteurController::class, 'create'])  ->middleware('permission:secretariat.visiteurs.gerer')->name('visiteurs.create');
+        Route::post('/visiteurs',                   [VisiteurController::class, 'store'])   ->middleware('permission:secretariat.visiteurs.gerer')->name('visiteurs.store');
+        Route::get('/visiteurs/{visiteur}',         [VisiteurController::class, 'show'])    ->name('visiteurs.show');
+        Route::patch('/visiteurs/{visiteur}/recevoir', [VisiteurController::class, 'recevoir'])->middleware('permission:secretariat.visiteurs.gerer')->name('visiteurs.recevoir');
+        Route::patch('/visiteurs/{visiteur}/sortir',   [VisiteurController::class, 'sortir'])  ->middleware('permission:secretariat.visiteurs.gerer')->name('visiteurs.sortir');
+        Route::patch('/visiteurs/{visiteur}/annuler',  [VisiteurController::class, 'annuler']) ->middleware('permission:secretariat.visiteurs.gerer')->name('visiteurs.annuler');
+
+        // Messages clients
+        Route::get('/messages',                        [MessageController::class, 'index'])  ->name('messages.index');
+        Route::get('/messages/nouveau',                [MessageController::class, 'create']) ->middleware('permission:secretariat.messages.envoyer')->name('messages.create');
+        Route::post('/messages',                       [MessageController::class, 'store'])  ->middleware('permission:secretariat.messages.envoyer')->name('messages.store');
+        Route::get('/messages/{message}',              [MessageController::class, 'show'])   ->name('messages.show');
+        Route::post('/messages/{message}/envoyer',                  [MessageController::class, 'envoyer'])               ->middleware('permission:secretariat.messages.envoyer')->name('messages.envoyer');
+        Route::delete('/messages/{message}',                        [MessageController::class, 'destroy'])               ->middleware('permission:secretariat.messages.envoyer')->name('messages.destroy');
+        Route::get('/messages/pieces/{piece}/telecharger',          [MessageController::class, 'telechargerPieceJointe'])->name('messages.pieces.telecharger');
+        Route::delete('/messages/pieces/{piece}',                   [MessageController::class, 'supprimerPieceJointe'])  ->middleware('permission:secretariat.messages.envoyer')->name('messages.pieces.supprimer');
+
+        // Rapports de réunion
+        Route::get('/reunions',                        [RapportReunionController::class, 'index'])    ->name('reunions.index');
+        Route::get('/reunions/nouveau',                [RapportReunionController::class, 'create'])   ->middleware('permission:secretariat.reunions.gerer')->name('reunions.create');
+        Route::post('/reunions',                       [RapportReunionController::class, 'store'])    ->middleware('permission:secretariat.reunions.gerer')->name('reunions.store');
+        Route::get('/reunions/{reunion}',              [RapportReunionController::class, 'show'])     ->name('reunions.show');
+        Route::get('/reunions/{reunion}/modifier',     [RapportReunionController::class, 'edit'])     ->middleware('permission:secretariat.reunions.gerer')->name('reunions.edit');
+        Route::put('/reunions/{reunion}',              [RapportReunionController::class, 'update'])   ->middleware('permission:secretariat.reunions.gerer')->name('reunions.update');
+        Route::delete('/reunions/{reunion}',           [RapportReunionController::class, 'destroy'])  ->middleware('permission:secretariat.reunions.gerer')->name('reunions.destroy');
+        Route::get('/reunions/{reunion}/imprimer',     [RapportReunionController::class, 'imprimer']) ->name('reunions.imprimer');
     });
 
     // ── Administration (admin uniquement) ────────────────────────

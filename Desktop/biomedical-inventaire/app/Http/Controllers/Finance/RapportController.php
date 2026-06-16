@@ -71,8 +71,8 @@ class RapportController extends Controller
             ->get();
 
         // ── Top clients (recettes) ───────────────────────────────
-        $topClients = Vente::whereIn('statut', ['payee', 'livree', 'facturee'])
-            ->whereYear('date_vente', $annee)
+        $topClients = Vente::whereIn('ventes.statut', ['payee', 'livree', 'facturee'])
+            ->whereYear('ventes.date_vente', $annee)
             ->join('clients', 'ventes.client_id', '=', 'clients.id')
             ->select('clients.nom', DB::raw('SUM(ventes.total_ttc) as total'), DB::raw('COUNT(*) as nb'))
             ->groupBy('clients.id', 'clients.nom')

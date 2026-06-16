@@ -83,6 +83,39 @@ class RolePermissionSeeder extends Seeder
             'finance.depenses.modifier',
             'finance.depenses.approuver',
             'finance.rapports.voir',
+
+            // Module GED (Documents)
+            'documents.voir',
+            'documents.creer',
+            'documents.modifier',
+            'documents.supprimer',
+            'documents.gerer',           // gestion catégories
+            'documents.confidentiels',   // accès aux docs confidentiels
+
+            // Module Achats
+            'achats.voir',
+            'achats.commandes.creer',
+            'achats.commandes.modifier',
+            'achats.commandes.annuler',
+            'achats.receptions.creer',
+            'achats.receptions.valider',
+            'achats.livraisons.creer',
+            'achats.livraisons.expedier',
+
+            // Module Secrétariat
+            'secretariat.voir',
+            'secretariat.visiteurs.gerer',
+            'secretariat.messages.envoyer',
+            'secretariat.reunions.gerer',
+
+            // Module Impôts
+            'impots.voir',
+            'impots.tva.voir',
+            'impots.tva.gerer',
+            'impots.is.voir',
+            'impots.is.gerer',
+            'impots.bilan.voir',
+            'impots.bilan.gerer',
         ];
 
         foreach ($permissions as $perm) {
@@ -159,6 +192,58 @@ class RolePermissionSeeder extends Seeder
             'finance.rapports.voir',
             'ventes.voir',
             'fournisseurs.voir',
+        ]);
+
+        // Ajouter documents.voir à tous les rôles de base
+        foreach ([$vente, $maintenance, $stock] as $role) {
+            $role->givePermissionTo(['documents.voir', 'documents.creer']);
+        }
+
+        // Ajouter achats.voir au gestionnaire_stock
+        $stock->givePermissionTo([
+            'achats.voir',
+            'achats.commandes.creer', 'achats.commandes.modifier',
+            'achats.receptions.creer', 'achats.receptions.valider',
+        ]);
+
+        // 8.5. Responsable Achats — module Achats complet
+        $achats = Role::firstOrCreate(['name' => 'responsable_achats']);
+        $achats->syncPermissions([
+            'dashboard.voir',
+            'achats.voir',
+            'achats.commandes.creer', 'achats.commandes.modifier', 'achats.commandes.annuler',
+            'achats.receptions.creer', 'achats.receptions.valider',
+            'achats.livraisons.creer', 'achats.livraisons.expedier',
+            'fournisseurs.voir', 'fournisseurs.gerer',
+            'equipements.voir',
+            'mouvements.voir',
+            'ventes.voir',
+            'clients.voir',
+        ]);
+
+        // 9. Secrétaire — module secrétariat complet
+        $secretaire = Role::firstOrCreate(['name' => 'secretaire']);
+        $secretaire->syncPermissions([
+            'dashboard.voir',
+            'secretariat.voir',
+            'secretariat.visiteurs.gerer',
+            'secretariat.messages.envoyer',
+            'secretariat.reunions.gerer',
+            'clients.voir',
+            'documents.voir',
+            'documents.creer',
+        ]);
+
+        // 8. Responsable Fiscal — module Impôts complet
+        $fiscal = Role::firstOrCreate(['name' => 'responsable_fiscal']);
+        $fiscal->syncPermissions([
+            'dashboard.voir',
+            'finance.voir', 'finance.rapports.voir',
+            'impots.voir',
+            'impots.tva.voir', 'impots.tva.gerer',
+            'impots.is.voir', 'impots.is.gerer',
+            'impots.bilan.voir', 'impots.bilan.gerer',
+            'ventes.voir',
         ]);
 
         // ── UTILISATEURS DE DÉMONSTRATION ───────────────────────
